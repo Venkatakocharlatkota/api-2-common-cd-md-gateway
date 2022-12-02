@@ -1,0 +1,13 @@
+{
+  "id": null,
+  "external_id": "1",
+  "name": "ACME Ltd.",
+  "credit_status": "ok",
+  "address": {
+    "line1": "High Street",
+    "line2": "Apartment 503",
+    "city": "New Town",
+    "state": "Kansas",
+    "zipcode": "KA 01234",
+    "country": "US"  }
+}

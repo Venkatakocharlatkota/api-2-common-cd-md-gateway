@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:spring="http://www.mulesoft.org/schema/mule/spring" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd">
+	<flow name="api-2-common-cd-gateway-main">
+        <http:listener config-ref="api-2_HTTP_Listener_config" path="/api/*" allowedMethods="PUT">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:body ><![CDATA[#[output application/json
+---
+{
+  "status_message" : "Master Data successfully posted to CD",
+  "status_code" : "200",
+  "error_text" : "No Error"
+}]]]></http:body>
+				<http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.errorStatusCode default 500]">
+                <http:body><![CDATA[#[output application/json
+---
+{
+  "status_message" : if (isEmpty(vars.errorDesc)) "Check Error Text below" else vars.errorDesc,
+  "status_code" : vars.errorStatusCode default "500",
+  "error_text" : error.description
+}]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+		<http:basic-security-filter doc:name="Basic security filter" doc:id="30d02e5c-bfff-433f-ab5d-ec016c3dd3a1" realm="MULE"/>
+		<spring:authorization-filter doc:name="Authorization filter" doc:id="eee04f02-b767-416f-94ad-4dd377259ab4" requiredAuthorities="ROLE_ADMIN" />
+		<try doc:name="Try" doc:id="b56ffa85-caae-45f1-80a2-44142468bbde" >
+			<set-variable value="#[message.attributes.headers.client_id]" doc:name="Set Variable" doc:id="fd4110f6-6996-4306-a0c4-f0a3f9f2ac83" variableName="client_id"/>
+			<validation:is-true doc:name="Is true" doc:id="caf1ad83-dfae-4c1f-9e5a-bb610d9b653f" expression="#[vars.client_id == Mule::p('secure::client_id')]"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b77ab09d-636d-48a0-9402-133e26ad470b" >
+					<raise-error doc:name="Raise error" doc:id="107c9ea1-02d8-467e-aaea-e3a1e22552fd" type="INVALID : CLIENT_ID" description="The Client ID is either NULL or NOT VALID. Please check with the Mulesoft team." />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="e08caa2a-09ca-460c-b2d2-91514881451e" message="+++ Data Received from Customer in api-2 common CD gateway +++" />
+		<apikit:router config-ref="api-2-common-cd-gateway-v1-config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b3959234-9c67-4a4f-a024-231c1f74443d" message="+++ API-2 Flow ended +++"/>
+		<error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <!-- <flow name="api-2-common-cd-gateway-console">
+        <http:listener path="/console/*" config-ref="api-2_HTTP_Listener_config">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="api-2-common-cd-gateway-v1-config"/>
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+-&#45;&#45;
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow> -->
+    <flow name="put:\commonRequestSub:api-2-common-cd-gateway-v1-config">
+		<flow-ref doc:name="Flow Reference" doc:id="e9b752fa-f002-4e89-a65a-93994dbb5868" name="commonRequestSub"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="26e90adb-b479-4dbe-8566-01179a1eda09" when='#[error.description contains("failed with status code 422")]'>
+				<logger level="INFO" doc:name="Logger" doc:id="b5dbf454-ea77-43d5-a962-a33333a92c76" message="+++ Error Propagate Section for HTTP 422 Error +++Error Description from CD - #[error.muleMessage.typedValue]"/>
+				<logger level="INFO" doc:name="Logger" doc:id="4fc98eed-65aa-4bbe-bde1-b3cda0d96625" message="+++ Payload on which error occured - #[vars.orgPayload] +++"/>
+				<ee:transform doc:name="Transform Message" doc:id="170d18a1-c42e-4bea-a6c4-9afbd8b0785d" >
+					<ee:message >
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="errorDesc" ><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output application/java
+---
+if(isEmpty(error.muleMessage.typedValue.errors) or error.muleMessage.typedValue.errors == [{}])  ("CD Error: Master Data Validation Error in CD. Contact CD support !") 
+else if(isEmpty(error.muleMessage.typedValue.errors.detail)) ("CD Error: Master Data Validation Error in CD. Contact CD support !")
+else ("CD Error:" ++ (substringAfter(error.muleMessage.typedValue.errors.detail[0], "request failed.") default ""))]]></ee:set-variable>
+						<ee:set-variable variableName="errorStatusCode" ><![CDATA["422"]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="fa1ab37f-33a9-4930-8b0f-1256657aed15" message="++++ Status : Code - #[vars.errorStatusCode], Description - #[vars.errorDesc] ++++"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8a11012f-4169-42a2-bbe7-781fece6104e" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="923a3387-dbf2-4f67-a6fb-225dbe2f4f1b" message="+++ Error Propagate Section for 'Any' Section for UNKNOWN Error +++ Error Description - #[error.description]" />
+				<logger level="INFO" doc:name="Logger" doc:id="ed199566-383a-46ea-ab8a-02cdc8d65fd5" message="Here is the Erroneous Master Data, #[vars.buisObj] and payload is #[vars.orgPayload] ++++" />
+				<logger level="INFO" doc:name="Logger" doc:id="4ca13966-db02-49fa-81bb-7f90a59cbe0b" message="+++ Sending Error Information via Email +++" />
+				<set-payload value='#[%dw 2.0&#10;output application/java&#10;---&#10;"Mule API Technical Error - Unexpected Error occured in CD/Mulesoft for " ++ (vars.buisObj default "") ++ " ID: " ++ (payload.external_id default "") ++ " received through Request ID " ++ (vars.request_id default "")]' doc:name="Set Payload" doc:id="2bff7153-6130-4f3d-b969-be293003c68f" />
+				<logger level="INFO" doc:name="Logger" doc:id="f5380c50-d879-4282-8ef1-c2632a668d55" message="+++ #[payload] +++" />
+				<cloudhub:create-notification domain="${secure::cloudhub.domain}" doc:name="Create Notification" doc:id="2faf3d48-a681-4c31-b1bc-8f7707f0688c" config-ref="CloudHub_Config" priority="ERROR" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+</mule>

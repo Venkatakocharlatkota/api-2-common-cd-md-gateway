@@ -1,0 +1,15 @@
+#%RAML 1.0
+title: api-2-common-cd-gateway-v1
+description: "API to submit data coming from different customers to Concrete Direct"
+
+version: 1.0.0
+protocols: [ HTTPS]
+mediaType: [ application/json ]
+baseUri: /api
+
+
+/commonRequestSub:
+  put:
+    description: "Create or Update customer data and submit to Concrete Direct"
+            
+            

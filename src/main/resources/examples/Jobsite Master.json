@@ -1,0 +1,24 @@
+{
+  "id": null,
+  "external_id": "1",
+  "customer_external_id": "1",
+  "name": "G&C Country Club",
+  "address": {
+    "line1": "G&C Country Club",
+    "line2": "Green Street 435",
+    "zipcode": "8005",
+    "city": "Zurich",
+    "country": "CH"  },
+  "location": {
+    "lat": "47.4148881",
+    "lon": "8.5578052"  },
+  "range_in_meters": "32.0",
+  "expiration_date": "2018-01-30T00:00:00+02:00",
+  "approved_items": [
+    {
+      "external_id": "1"    },
+    {
+      "external_id": "2"    }
+  ],
+  "require_accounting_reference": true,
+  "default_accounting_reference": "182139123"}

@@ -1,0 +1,27 @@
+#### Http port for testing
+https.port: "8093"
+
+mule.keystore.path: keystore/Holcim-Mule-dev-KeyStore.p12
+mule.keystore.alias: keystore-cd-nonprod
+mule.keystore.pwd: "![bR4VSKT/V2+cET+jONPIrg==]"
+mulepassword: "![g1BKxm0GRCt6BHcaISZJBA==]"
+
+client_id: "![/6TQIO1upn4mQaUX5/LdKUW2+moKvHrqV/hKwrYGMrc7VVLebDvPJofFPEyq3HVB]"
+IND.X-RSM-int-api-key : "![MTk7/Z3hldwLkWRemKxU6I5O4rkm0MJTPjZTkgU7JRu817RN9/ZgQlxbEaoejFHzo0syStC41FJ8UnbVh2jaV6GbMHG7jT4k0Kz/Te4Cf+o=]"
+UK1.X-RSM-int-api-key : "![IColacJtrW+v3+xJ/RGh/pbRHOHKdIBUGuxSHrr7EnSXFQYaCX5xmxVW1WPu8UtzRHpircy7eUAlIjDGCI8jNM4yb92DkMiqUOlM+z+ID9g=]"
+SV.X-RSM-int-api-key : "![HMM+Fg03JYeG9skHvUec3Lf0rMLA3hus+KlDdtykGQpIp1/mC5gEwfoVVS8NOHg9YH6xzMJOhk2tvZhmrnctA7MpH0rrHQOVjXxNJvAFVtI=]"
+EC.X-RSM-int-api-key : "![0NZlycHZyu4/fWhTAiv7IeWVxMsCwRSfQwhiIlji3/Y+x/6M4MnxdOFZOd9XQ8VSwWzdZ21tvJSM0SiyQGj+S7jRIksgErGim9Yz3QfTDYw=]"
+CO.X-RSM-int-api-key : "![Q50ZWJWe5l9B5RqyIbe9fpRVaj0vuHYJpftC8wkOHFFAFlEwFsL4Sctj8+QM3px/GB+SJMbUu4oJIhjRUcnECT0HszTM+Boz95DQcTY7uRU=]"
+cd.host: "staging.kubikapp.com"
+api2.basePath: "/api/integration/v2"
+
+SQSTestQueueARN: "arn:aws:sqs:eu-west-1:379218615267:cd-mulesoft-dv-error-queue"
+SQSAccessKey: "AKIAVQSZQ3PR4HTQ5Q76"
+SQSSecretKey: "![3nvftpjYPhyfPX0dwhTVH0BMiqqAb38wk0b6bTeUyfF9vvfkXdLxTUUeTBJtWyd2]"
+SQSQueueURL: "https://sqs.eu-west-1.amazonaws.com/379218615267/cd-mulesoft-dv-error-queue"
+
+cloudhub.username: "Concrete-Direct-CICD"
+cloudhub.pwd: "![HGeEXUOYhl78axu8xp1wxek/R0SMQysWyGeyt4eApYA=]"
+cloudhub.env: "61093a8e-1745-49f7-ac2a-361e2f7d211c"
+cloudhub.domain: "api-2-common-cd-md-dev-gateway"
+

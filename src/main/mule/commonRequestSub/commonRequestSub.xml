@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="commonRequestSub" doc:id="cc43c0a8-4c5b-4669-8214-048dd4491cd2" >
+		<logger level="INFO" doc:name="Logger" doc:id="62ebe441-0e54-420f-a35f-69e7b84b4f05" message="+++ commonRequestSub flow triggered. +++" />
+		<logger level="DEBUG" doc:name="Logger" doc:id="c94d628f-f8e9-440f-bb77-6607c0ae4680" message="+++ Payload - #[payload] +++"/>
+		<ee:transform doc:name="Transform Message" doc:id="0125c474-0583-4c55-abb4-ff35bbadf478" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sourceSys" ><![CDATA[message.attributes.headers.sourceSys]]></ee:set-variable>
+				<ee:set-variable variableName="externalId" ><![CDATA[payload.external_id default""]]></ee:set-variable>
+				<ee:set-variable variableName="companyId" ><![CDATA[payload.customer_external_id]]></ee:set-variable>
+				<ee:set-variable variableName="buisObj" ><![CDATA[message.attributes.headers.BuisnessObject]]></ee:set-variable>
+				<ee:set-variable variableName="apiKey" ><![CDATA[%dw 2.0
+output application/java
+var tempKey = "secure::" ++ (message.attributes.headers.systemIdentifier default "") ++ "." ++ "X-RSM-int-api-key"
+---
+p(tempKey)]]></ee:set-variable>
+				<ee:set-variable variableName="msgIdentifier" ><![CDATA[message.attributes.headers.messageIdentifier]]></ee:set-variable>
+				<ee:set-variable variableName="orgPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+				<ee:set-variable variableName="systemIdentifier" ><![CDATA[message.attributes.headers.systemIdentifier default""]]></ee:set-variable>
+				<ee:set-variable variableName="request_id" ><![CDATA[message.attributes.headers.request_id default uuid()]]></ee:set-variable>
+				<ee:set-variable variableName="errorDesc" ><![CDATA[%dw 2.0
+output application/java
+---
+"CD Error: Failed to post master data to CD. Contact Mulesoft Support !"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="187131a4-023c-4a8b-b0c2-deb015d34e68" message="++++ Request with Buisness Object - #[vars.buisObj] and Message Identifier - #[vars.msgIdentifier] and Request ID - #[vars.request_id] is received for CD submission. ++++" />
+		<choice doc:name="Choice" doc:id="e56dd8ee-a82d-4e15-9c20-d3193f2ecc2d" >
+			<when expression='#[vars.buisObj == "VehicleMaster"]' >
+				<logger level="INFO" doc:name="Logger" doc:id="751e1960-a75c-468f-b0a7-370a4aac5e05" message="++++ Source System - #[vars.sourceSys] ++++" />
+				<set-variable value='#["/" ++ "vehicles" ++ "/" ++ (vars.externalId default "")]' doc:name="Set Variable" doc:id="c69a62bb-b144-4c33-9dfc-0c73542f5956" variableName="varDynPath"/>
+				<logger level="INFO" doc:name="Logger" doc:id="ef7b5d78-237e-4a06-b365-83f043b1fb87" message="+++ Submitting Vehicle Master data to CD for Vehicle ID - #[vars.externalId] .+++" />
+				<flow-ref doc:name="Flow Reference" doc:id="68fc8fd6-d10e-4e87-9f73-a8d6ad5774a6" name="commonRequestToCDFlow" />
+				<logger level="INFO" doc:name="Logger" doc:id="b874ae5e-079f-43e9-8297-985eacbd66ce" message="+++ Successfully Submitted Vehicle Master data to CD for Vehicle ID - #[vars.externalId].+++" />
+			</when>
+			<when expression='#[vars.buisObj == "CustomerMaster"]' >
+				<logger level="INFO" doc:name="Logger" doc:id="60269da9-7138-4aaf-91cb-d10478a6eaec" message="++++ Source System - #[vars.sourceSys] ++++" />
+				<set-variable value='#["/" ++ "customer_companies" ++ "/" ++ (vars.externalId default "")]' doc:name="Set Variable" doc:id="0a3b90cc-c3ba-4d12-b3e7-f14526a0dd37" variableName="varDynPath"/>
+				<logger level="INFO" doc:name="Logger" doc:id="e8fc4ba1-d9f1-4986-9822-4e966af84efb" message="+++ Submitting Customer Master data to CD for Customer ID - #[vars.externalId] .+++"/>
+				<flow-ref doc:name="Flow Reference" doc:id="cbf426ab-454f-43cc-98d7-af9ae99d0445" name="commonRequestToCDFlow"/>
+				<logger level="INFO" doc:name="Logger" doc:id="47e6cdcf-03fb-4976-ac28-d9f7855e20d3" message="+++ Successfully Submitted Customer Master data to CD for Customer ID - #[vars.externalId] .+++"/>
+			</when>
+			<when expression='#[vars.buisObj == "JobsiteMaster"]' >
+				<logger level="INFO" doc:name="Logger" doc:id="4823b4f7-7fc5-4085-b76c-decccaa1d476" message="++++ Source System - #[vars.sourceSys] ++++" />
+				<set-variable value='#["/" ++ "jobsites" ++ "/" ++ (vars.externalId default "")]' doc:name="Set Variable" doc:id="2c390d3a-a310-4a27-ae65-06d888810bf1" variableName="varDynPath"/>
+				<logger level="INFO" doc:name="Logger" doc:id="2311d7cc-915c-43db-a0d3-4b2ff0ccba6c" message="+++ Submitting Jobsite Master data to CD for Jobsite ID - #[vars.externalId] .+++"/>
+				<flow-ref doc:name="Flow Reference" doc:id="7b4c6e8e-e9d7-456f-9980-f01a544155f9" name="commonRequestToCDFlow"/>
+				<logger level="INFO" doc:name="Logger" doc:id="98d47fba-9d7a-4731-83e1-24c4ac409d66" message="+++ Successfully Submitted Jobsite Master data to CD for Jobsite ID - #[vars.externalId].+++"/>
+			</when>
+			<when expression='#[vars.buisObj == "ItemMaster"]' >
+				<logger level="INFO" doc:name="Logger" doc:id="ef83b782-4958-4c22-a954-3bf71003f880" message="++++ Source System - #[vars.sourceSys] ++++" />
+				<set-variable value='#["/" ++ "items" ++ "/" ++ (vars.externalId default "")]' doc:name="Set Variable" doc:id="ef9b7e92-a28e-49ce-a2ec-99225c90938d" variableName="varDynPath" />
+				<logger level="INFO" doc:name="Logger" doc:id="686f1d89-257f-4794-a50c-218fe7c28720" message="+++ Submitting Item Master data to CD for Item ID - #[vars.externalId] .+++"/>
+				<flow-ref doc:name="Flow Reference" doc:id="f0d40c96-ab34-4c6f-b6ca-1f162cd643e9" name="commonRequestToCDFlow"/>
+				<logger level="INFO" doc:name="Logger" doc:id="3943c6a2-5f5f-4c3e-a4cb-a68fa1fdcd54" message="+++ Successfully Submitted Item Master data to CD for Item ID - #[vars.externalId] .+++"/>
+			</when>
+			<when expression='#[vars.buisObj == "PlantMaster"]' >
+				<logger level="INFO" doc:name="Logger" doc:id="c3045067-964e-4736-86e1-cd509dcef966" message="++++ Source System - #[vars.sourceSys] ++++" />
+				<set-variable value='#["/" ++ "plants" ++ "/" ++ (vars.externalId default "")]' doc:name="Set Variable" doc:id="29ce15db-69c2-493b-9551-622db0cbfb8e" variableName="varDynPath"/>
+				<logger level="INFO" doc:name="Logger" doc:id="6d1fb907-f0c8-4aee-a591-b2bed86e2e91" message="+++ Submitting Plant Master data to CD for Plant ID -#[vars.externalId] .+++"/>
+				<flow-ref doc:name="Flow Reference" doc:id="50f5bb9d-4dc9-4492-949c-616d7dab4cf4" name="commonRequestToCDFlow"/>
+				<logger level="INFO" doc:name="Logger" doc:id="41c77bd2-1aa0-409a-9217-12425cab0599" message="+++ Successfully Submitted Plant Master data to CD for Plant ID - #[vars.externalId].+++"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="65338ad5-1ef6-41a7-b8ce-984ad6f0017f" message="The Customer Object Given is NOT VALID." />
+				<raise-error doc:name="Raise error" doc:id="37509086-43c3-4a30-ac94-03c92027931c" type="INVALID : INVALID CUSTOMERID " description="The Customer Object given is NOT VALID. Please contact the Holcim Mulesoft Team. " />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

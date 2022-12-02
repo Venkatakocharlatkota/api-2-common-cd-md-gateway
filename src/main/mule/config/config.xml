@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:sqs="http://www.mulesoft.org/schema/mule/sqs"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:spring="http://www.mulesoft.org/schema/mule/spring" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/sqs http://www.mulesoft.org/schema/mule/sqs/current/mule-sqs.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd">
+	<http:listener-config name="api-2_HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="56cbf955-3fe5-42d8-81fb-e7cdcdfe360d" >
+		<http:listener-connection protocol="HTTPS" host="0.0.0.0" port="${https.port}" >
+			<tls:context >
+				<tls:key-store type="pkcs12" path="${secure::mule.keystore.path}" alias="${secure::mule.keystore.alias}" keyPassword="${secure::mule.keystore.pwd}" password="${secure::mule.keystore.pwd}" />
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	<apikit:config outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" doc:name="Router" doc:id="dd119309-5a12-4eae-9b95-10ce59bbdc84" name="api-2-common-cd-gateway-v1-config" api="api-2-common-cd-gateway-v1.raml"/>
+	<spring:config name="Spring_Config" doc:name="Spring Config" doc:id="002570d1-5c23-4515-9bc2-74a11dcbcf1f" files="beans.xml" />
+	<spring:security-manager doc:name="Spring Security manager" doc:id="5d1d1a1a-499f-4462-bec4-13fe2fe9ab3f" >
+		<spring:delegate-security-provider name="security-provider" delegate-ref="authenticationManager" />
+	</spring:security-manager>
+	<configuration-properties doc:name="Configuration properties" doc:id="cdb39678-c25c-4775-8487-7a4e938c4d6f" file="common-config.yaml" doc:description="This is the common configuration/properties file. This file is not secure."/>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="9d320e39-947e-4259-992a-8c439816e254" file="config-${mule.env}.yaml" key="${mule.key}" doc:description="This is the Secure Properties/Configuration file.&#10;"/>
+	<global-property doc:name="Global Property" doc:id="fc66032f-8730-42ee-9071-8fc4262e8c27" name="mule.key" value="hSSGsr08447UQmy8ZtfliTSShaNz2021" />
+	<global-property doc:name="Global Property" doc:id="99617202-08f1-4dff-99fe-188277a49090" name="mule.env" value="dev" />
+	<http:listener-config name="HTTPTesting_Listener_config" doc:name="HTTP Listener config" doc:id="94791e00-55e1-4ccd-8008-47f74a8dbfa9" >
+		<http:listener-connection host="localhost" port="8083">
+		</http:listener-connection>
+	</http:listener-config>
+	<http:request-config name="HTTP_Common_Request_configuration" doc:name="HTTP Request configuration" doc:id="d67aa2a3-c52d-4708-8eb7-d7e9c74335ee" basePath="${secure::api2.basePath}" doc:description="This is common HTTP request for all masters." responseTimeout="300000">
+		<http:request-connection protocol="HTTPS" host="${secure::cd.host}" />
+	</http:request-config>
+	<sqs:config name="Amazon_SQS_Configuration" doc:name="Amazon SQS Configuration" doc:id="3b608794-4f01-4512-8aab-6f771bdb2730" >
+		<sqs:basic-connection testQueueArn="${secure::SQSTestQueueARN}" accessKey="${secure::SQSAccessKey}" secretKey="${secure::SQSSecretKey}" region="eu-west-1" />
+	</sqs:config>
+	<cloudhub:config name="CloudHub_Config" doc:name="CloudHub Config" doc:id="172acca7-3bc4-4bca-9b0c-5e65fc316557" >
+		<cloudhub:connection username="${secure::cloudhub.username}" password="${secure::cloudhub.pwd}" environment="${secure::cloudhub.env}" />
+	</cloudhub:config>
+</mule>
